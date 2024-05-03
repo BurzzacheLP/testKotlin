@@ -8,14 +8,9 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
-        android:layout_width="match_parent"
-        android:layout_height="690dp" />
-
     <Button
         android:id="@+id/homeBtnScan"
         android:layout_width="221dp"
         android:layout_height="wrap_content"
-        android:text="Scanear QR" />
+        android:text="Open QR Scanner" />
 </LinearLayout>

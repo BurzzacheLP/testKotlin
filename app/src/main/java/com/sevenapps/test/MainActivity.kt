@@ -2,6 +2,7 @@ package com.sevenapps.test
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -11,16 +12,19 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.google.common.util.concurrent.ListenableFuture
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.sevenapps.test.databinding.ActivityHomeBinding
+import com.sevenapps.test.databinding.ActivityScannerBinding
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -28,12 +32,7 @@ import java.util.concurrent.Executors
 
 
 class MainActivity : ComponentActivity(){
-    private lateinit var viewBinding : ActivityHomeBinding
-    private lateinit var cameraExecutor : ExecutorService
-    private lateinit var barcodeScaner : BarcodeScanner
-
-
-    private var imageCapture : ImageCapture? = null
+    private lateinit var viewBinding    : ActivityHomeBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,105 +40,39 @@ class MainActivity : ComponentActivity(){
 
         setContentView(viewBinding.root)
 
-        if (allPermissionsGranted()) {
-            startCamera()
-        } else {
-            requestPermissions()
+        requestPermissions()
+
+        // Abrir scanner
+
+        viewBinding.homeBtnScan.setOnClickListener{
+            val intent = Intent(this, ScannerActivity::class.java)
+            startActivity(intent)
+
+            startScanner()
         }
 
-        viewBinding.homeBtnScan.setOnClickListener{ scanQR() }
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        cameraExecutor.shutdown()
-    }
+    private fun startScanner(){
+        ScannerActivity.startScanner(this) {barcodes ->
+            barcodes.forEach {barcode ->
+                when(barcode.valueType){
+                    Barcode.TYPE_URL ->{
 
-    private fun scanQR() {
-        //aca deberia ir lo que salga del boton
-        //val result = scanner.process()
+                    }
 
-        val imageCapture = imageCapture ?: return
+                    Barcode.TYPE_PRODUCT ->{
 
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-            .format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/BarScanner")
+                    }
+                    else -> {
+
+                    }
+                }
             }
         }
-
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(contentResolver,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    contentValues)
-            .build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exc: ImageCaptureException) {
-                    Log.e(TAG, "Captura fallida: ${exc.message}", exc)
-                }
-
-                override fun
-                        onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        val msg = "Foto tomada con exito: ${outputFileResults.savedUri}"
-                        Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                        Log.d(TAG, msg)
-                }
-            }
-        )
     }
 
-    private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-        cameraProviderFuture.addListener({
-         // Bindedar el lifecycle de la camara al del owner
-            val cameraProvider : ProcessCameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
-                }
-
-            imageCapture = ImageCapture.Builder()
-                .build()
-
-            // Constructor de las opciones del scanner
-            val scannerOptions = BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(
-                    Barcode.FORMAT_CODE_39
-                )
-                .build()
-            barcodeScaner = BarcodeScanning.getClient(scannerOptions)
-
-            val cameraSelector  = CameraSelector.DEFAULT_BACK_CAMERA
-
-            try {
-                // Unbindear por si acaso antes de rebindear
-                cameraProvider.unbindAll()
-
-                // Bindear ahora chi
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture)
-            } catch (exc: Exception) {
-                Log.e(TAG, "Binding ha fallado", exc)
-            }
-
-        }, ContextCompat.getMainExecutor(this))
-
-
-
-    }
-
+    //--- PERMISOS ---//
     private fun requestPermissions() {
         activityResultLauncher.launch(REQUIRED_PERMISSIONS)
     }
@@ -150,31 +83,32 @@ class MainActivity : ComponentActivity(){
     }
 
 
+    // TOdo decirle al usuario que necesitamos si o si los permisos de camara
     private val activityResultLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions())
         { permissions ->
             var permissionGranted = true
+
             permissions.entries.forEach{
                 if (it.key in REQUIRED_PERMISSIONS && it.value == false)
                     permissionGranted = false
             }
+
             if (!permissionGranted) {
                 Toast.makeText(baseContext,
                     "Permission Request Denied :(",
                     Toast.LENGTH_SHORT).show()
             } else {
-                startCamera()
+                //tartCamera()
             }
         }
 
+
     companion object {
-        private const val TAG = "BarcodeScanner"
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS =
             mutableListOf(
                 Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO
             ).apply {
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
