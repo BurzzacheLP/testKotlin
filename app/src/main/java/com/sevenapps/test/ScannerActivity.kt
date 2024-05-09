@@ -1,44 +1,35 @@
 package com.sevenapps.test
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
+import android.view.LayoutInflater
+import android.view.View
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.sevenapps.test.R.layout.scanner_bottom_sheet
 import com.sevenapps.test.databinding.ActivityScannerBinding
-import java.text.SimpleDateFormat
-import java.util.Locale
-import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-
 class ScannerActivity : ComponentActivity(){
+    //---- Scanner ----//
     private lateinit var viewBinding    : ActivityScannerBinding
     private lateinit var cameraExecutor : ExecutorService
-
 
     private lateinit var imageAnalysis  : ImageAnalysis
 
@@ -49,6 +40,13 @@ class ScannerActivity : ComponentActivity(){
 
     private val cameraSelector  = CameraSelector.DEFAULT_BACK_CAMERA
 
+    //---- Drawer ----//
+    // Drawer para mostrar la informacion del qr escaneado
+    // Nota: papa dijo q seria mas practico mostrar la info en una actividad nueva > difiero > experimentar
+
+
+    private lateinit var bottomSheetDialog : BottomSheetDialog
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityScannerBinding.inflate(layoutInflater)
@@ -56,6 +54,16 @@ class ScannerActivity : ComponentActivity(){
 
         viewBinding.viewFinder.setOnClickListener{
 
+            val sheetView : View = LayoutInflater.from(this).inflate(scanner_bottom_sheet, null)
+            val dialogView = BottomSheetDialog(this)
+
+
+            dialogView.setContentView(sheetView)
+
+            dialogView.show()
+
+
+            println("\n \n \n deberia salir el bottom sheet\n \n \n")
         }
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -67,10 +75,10 @@ class ScannerActivity : ComponentActivity(){
             }, ContextCompat.getMainExecutor(this)
         )
 
-
-
-
     }
+
+
+
 
     private fun bindCamPreview(){
         cameraPreview = Preview.Builder()
@@ -141,6 +149,11 @@ class ScannerActivity : ComponentActivity(){
             }
         }
     }
+
+    //---- Bottom Sheet ----//
+    // Quiero ver si puedo hacer un bottomDrawer que muestre la informacion del qr cuando el onScan se complete
+
+
 
 }
 

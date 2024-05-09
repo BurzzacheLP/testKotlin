@@ -12,5 +12,5 @@
         android:id="@+id/homeBtnScan"
         android:layout_width="221dp"
         android:layout_height="wrap_content"
-        android:text="Open QR Scanner" />
+        android:text="@string/strScam" />
 </LinearLayout>

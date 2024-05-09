@@ -1,3 +1,17 @@
 <resources>
-    <string name="app_name">test</string>
+    <string name="app_name">Ferreteriapp</string>
+
+    <string name="strScam">Escanear codigo</string>
+
+    //--- Producto ---//
+    <string name="strProductName">prodName</string>
+    <string name="strProductType">prodType</string>
+    <string name="strProductCode">prodCode</string>
+    <string name="strProductCategory">prodCat</string>
+    <string name="strProductCant">prodCant</string>
+    <string name="strProductPrice">prodPrice</string>
+
+    //--- Proveedor ---//
+    <string name="strProvName">provName</string>
+    <string name="strProvCode">provCode</string>
 </resources>
